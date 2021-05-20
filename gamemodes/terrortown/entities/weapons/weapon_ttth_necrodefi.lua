@@ -70,6 +70,7 @@ if SERVER then
 	function SWEP:OnDrop()
 		self.BaseClass.OnDrop(self)
 
+		self:CancelRevival()
 		self:Remove()
 	end
 
@@ -126,6 +127,7 @@ if SERVER then
 
 	function SWEP:BeginRevival(ragdoll, bone)
 		local ply = CORPSE.GetPlayer(ragdoll)
+		local owner = self:GetOwner()
 
 		if not IsValid(ply) then
 			self:Error(DEFI_ERROR_NO_VALID_PLY)
@@ -148,7 +150,9 @@ if SERVER then
 		-- start revival
 		ply:Revive(
 			reviveTime,
-			AddZombie,
+			function(p)
+				AddZombie(p, owner)
+			end,
 			nil,
 			true,
 			true
@@ -304,7 +308,7 @@ if CLIENT then
 			ply.defi_lastRequest = CurTime()
 		end
 
-		return ply.defi_isRevining or false
+		return ply.defi_isReviving or false
 	end
 
 	net.Receive("ReceiveNecroRevivalStatus", function()
@@ -312,7 +316,7 @@ if CLIENT then
 
 		if not IsValid(ply) then return end
 
-		ply.defi_isRevining = net.ReadBool()
+		ply.defi_isReviving = net.ReadBool()
 	end)
 
 	hook.Add("TTTRenderEntityInfo", "ttt2_necro_defibrillator_display_info", function(tData)
